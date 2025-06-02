@@ -141,15 +141,17 @@ start_tunel() {
   if [[ -f "$PID_PATH" ]]; then
     PID=$(cat "$PID_PATH")
     if kill -0 "$PID" &>/dev/null; then
-      echo -e "${COLOR_YELLOW}[!] $NAME is already running (PID: $PID).${COLOR_RESET}"
-      return
+      echo -e "${COLOR_YELLOW}[!] $NAME is already running (PID: $PID). Killing it first...${COLOR_RESET}"
+      kill "$PID"
+      sleep 1
     fi
   fi
 
-  cloudflared tunnel --config "$CONFIG_PATH" run &> /dev/null &
+  # Start the tunnel in the background using nohup
+  nohup cloudflared tunnel --config "$CONFIG_PATH" run &> /dev/null &
   PID=$!
   echo "$PID" > "$PID_PATH"
-  echo -e "${COLOR_GREEN}[+] $NAME started (PID: $PID).${COLOR_RESET}"
+  echo -e "${COLOR_GREEN}[+] $NAME started in background (PID: $PID).${COLOR_RESET}"
 }
 
 stop_tunel() {
