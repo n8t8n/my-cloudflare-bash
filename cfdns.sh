@@ -22,7 +22,7 @@ create_record() {
   # Verificar si se está ejecutando en modo automático desde cfmanager.sh
   if [[ "$1" == "--auto-tunnel" ]]; then
     if [[ -z "$CF_DNS_SUB" || -z "$CF_DNS_TARGET" ]]; then
-      echo -e "${RED}[!] Faltan variables de entorno para el modo automático.${RESET}"
+      echo -e "${RED}[!] Missing environment variables for automatic mode.${RESET}"
       exit 1
     fi
     
@@ -31,56 +31,56 @@ create_record() {
     TARGET="$CF_DNS_TARGET"
     PROXY_ENABLED=true
     
-    echo -e "${CYAN}[*] Modo automático: Creando CNAME para $SUB.$CF_DOMAIN → $TARGET con proxy activado${RESET}"
+    echo -e "${CYAN}[*] Automatic mode: Creating CNAME for $SUB.$CF_DOMAIN → $TARGET with proxy enabled${RESET}"
   else
     # Modo interactivo normal
-    echo -e "${CYAN}=== Crear subdominio en Cloudflare ===${RESET}"
-    echo -n "Subdominio (ej: app): "
+    echo -e "${CYAN}=== Create subdomain in Cloudflare ===${RESET}"
+    echo -n "Subdomain (e.g., app): "
     read SUB
-    echo -n "Tipo de registro (A/CNAME): "
+    echo -n "Record type (A/CNAME): "
     read TYPE
     TYPE=$(echo "$TYPE" | tr '[:lower:]' '[:upper:]')
 
     if [[ "$TYPE" == "A" ]]; then
-      echo -n "IP destino (ej: 192.168.1.10): "
+      echo -n "Destination IP (e.g., 192.168.1.10): "
       read TARGET
     elif [[ "$TYPE" == "CNAME" ]]; then
-      echo -n "Host destino (ej: mytunnel.cfargotunnel.com): "
+      echo -n "Destination host (e.g., mytunnel.cfargotunnel.com): "
       read TARGET
     else
-      echo -e "${RED}[!] Tipo inválido. Solo A o CNAME.${RESET}"
+      echo -e "${RED}[!] Invalid type. Only A or CNAME.${RESET}"
       exit 1
     fi
 
     # Añadir opción para habilitar el proxy (nube naranja)
-    echo -n "¿Activar proxy de Cloudflare? (s/n): "
+    echo -n "Enable Cloudflare proxy? (y/n): "
     read PROXY_OPTION
     PROXY_ENABLED=false
     # Convertir a minúsculas de manera compatible
     PROXY_OPTION_LOWER=$(echo "$PROXY_OPTION" | tr '[:upper:]' '[:lower:]')
-    if [[ "$PROXY_OPTION_LOWER" == "s" || "$PROXY_OPTION_LOWER" == "si" || "$PROXY_OPTION_LOWER" == "sí" ]]; then
+    if [[ "$PROXY_OPTION_LOWER" == "y" || "$PROXY_OPTION_LOWER" == "yes" || "$PROXY_OPTION_LOWER" == "si" || "$PROXY_OPTION_LOWER" == "sí" ]]; then
       PROXY_ENABLED=true
-      echo -e "${CYAN}[*] El proxy de Cloudflare será activado (nube naranja)${RESET}"
+      echo -e "${CYAN}[*] Cloudflare proxy will be enabled (orange cloud)${RESET}"
     else
-      echo -e "${CYAN}[*] El proxy de Cloudflare no será activado (nube gris)${RESET}"
+      echo -e "${CYAN}[*] Cloudflare proxy will not be enabled (gray cloud)${RESET}"
     fi
   fi
 
   FULL_NAME="$SUB.$CF_DOMAIN"
 
   # Verificar si ya existe (sin usar jq)
-  echo -e "${CYAN}[*] Verificando si el registro ya existe...${RESET}"
+  echo -e "${CYAN}[*] Checking if record already exists...${RESET}"
   CHECK_RESPONSE=$(curl -s -X GET "$CF_API_BASE/zones/$CF_ZONE_ID/dns_records?name=$FULL_NAME" \
     -H "Authorization: Bearer $CF_API_TOKEN" \
     -H "Content-Type: application/json")
   
   # Verificar si el registro existe usando grep en lugar de jq
   if echo "$CHECK_RESPONSE" | grep -q "\"name\":\"$FULL_NAME\""; then
-    echo -e "${YELLOW}[!] Ya existe un registro para $FULL_NAME${RESET}"
+    echo -e "${YELLOW}[!] A record already exists for $FULL_NAME${RESET}"
     exit 0
   fi
 
-  echo -e "${CYAN}[*] Creando $TYPE para $FULL_NAME → $TARGET ...${RESET}"
+  echo -e "${CYAN}[*] Creating $TYPE record for $FULL_NAME → $TARGET ...${RESET}"
 
   RESPONSE=$(curl -s -X POST "$CF_API_BASE/zones/$CF_ZONE_ID/dns_records" \
     -H "Authorization: Bearer $CF_API_TOKEN" \
@@ -94,14 +94,14 @@ create_record() {
     }")
 
   if echo "$RESPONSE" | grep -q '"success":true'; then
-    PROXY_STATUS="nube gris (proxy desactivado)"
+    PROXY_STATUS="gray cloud (proxy disabled)"
     if [ "$PROXY_ENABLED" = true ]; then
-      PROXY_STATUS="nube naranja (proxy activado)"
+      PROXY_STATUS="orange cloud (proxy enabled)"
     fi
-    echo -e "${GREEN}[✓] Subdominio creado correctamente: $FULL_NAME → $TARGET${RESET}"
-    echo -e "${GREEN}[✓] Estado del proxy: $PROXY_STATUS${RESET}"
+    echo -e "${GREEN}[✓] Subdomain created successfully: $FULL_NAME → $TARGET${RESET}"
+    echo -e "${GREEN}[✓] Proxy status: $PROXY_STATUS${RESET}"
   else
-    echo -e "${RED}[✗] Error al crear el registro.${RESET}"
+    echo -e "${RED}[✗] Error creating record.${RESET}"
     echo "$RESPONSE"
   fi
 }
