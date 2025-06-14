@@ -147,8 +147,8 @@ start_tunel() {
     fi
   fi
 
-  # Start the tunnel in the background using nohup
-  nohup cloudflared tunnel --config "$CONFIG_PATH" run &> /dev/null &
+  # Start the tunnel fully detached from the terminal
+  nohup cloudflared tunnel --config "$CONFIG_PATH" run > /dev/null 2>&1 &
   PID=$!
   echo "$PID" > "$PID_PATH"
   echo -e "${COLOR_GREEN}[+] $NAME started in background (PID: $PID).${COLOR_RESET}"
@@ -171,6 +171,39 @@ stop_tunel() {
   else
     echo -e "${COLOR_RED}[!] Process $PID dead, cleaning up.${COLOR_RESET}"
     rm -f "$PID_PATH"
+  fi
+}
+
+edit_tunel() {
+  NAME="$1"
+  if [[ -z "$NAME" ]]; then
+    echo -n "Tunnel name to edit: "
+    read NAME
+  fi
+
+  CONFIG_PATH="$CONFIG_DIR/$NAME-config.yml"
+  CRED_FILE=$(grep 'credentials-file:' "$CONFIG_PATH" | awk '{print $2}' | tr -d '"')
+
+  if [[ ! -f "$CONFIG_PATH" ]]; then
+    echo -e "${COLOR_RED}[!] Tunnel not found: $NAME${COLOR_RESET}"
+    return
+  fi
+
+  echo -e "${COLOR_CYAN}[*] Editing configuration files for tunnel: $NAME${COLOR_RESET}"
+  echo -e "${COLOR_YELLOW}[!] Press Enter to open the files in your default editor.${COLOR_RESET}"
+
+  # Open the YAML config file
+  echo -e "${COLOR_BLUE}[*] Editing YAML config: $CONFIG_PATH${COLOR_RESET}"
+  read -p "Press Enter to continue..."
+  ${EDITOR:-nano} "$CONFIG_PATH"
+
+  # Open the JSON credentials file
+  if [[ -f "$CRED_FILE" ]]; then
+    echo -e "${COLOR_BLUE}[*] Editing JSON credentials: $CRED_FILE${COLOR_RESET}"
+    read -p "Press Enter to continue..."
+    ${EDITOR:-nano} "$CRED_FILE"
+  else
+    echo -e "${COLOR_RED}[!] Credentials file not found: $CRED_FILE${COLOR_RESET}"
   fi
 }
 
@@ -207,7 +240,7 @@ status_tuneles() {
     fi
 
     print_line
-    echo -e "${COLOR_BLUE}Commands:${COLOR_RESET} start <name> | stop <name> | delete <name>"
+    echo -e "${COLOR_BLUE}Commands:${COLOR_RESET} start <name> | stop <name> | delete <name> | edit <name>"
     echo -e "          start-all | stop-all | delete-all | refresh | back"
     print_line
     echo -n ">> "
@@ -217,6 +250,7 @@ status_tuneles() {
       start) start_tunel "$param" ;;
       stop) stop_tunel "$param" ;;
       delete) eliminar_tunel "$param" ;;
+      edit) edit_tunel "$param" ;;
       start-all)
         for conf in "${TUNNELS[@]}"; do
           NAME=$(basename "$conf" | sed 's/-config.yml//')

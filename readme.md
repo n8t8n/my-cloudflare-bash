@@ -1,6 +1,6 @@
 # 🌐 Cloudflare Tunnel Manager
 
-This project provides a set of scripts to manage Cloudflare Tunnels and DNS records. Originally created for a Moto E5 Play device running Termux and proot-distro Ubuntu, these tools help manage Cloudflare infrastructure from mobile devices.
+This project provides a set of scripts to manage Cloudflare Tunnels and DNS records, along with a user-friendly web interface for file management and AI assistance. Originally created for a Moto E5 Play device running Termux and proot-distro Ubuntu, these tools help manage Cloudflare infrastructure from mobile devices.
 
 ## 🛠️ Scripts
 
@@ -9,6 +9,7 @@ This script is the main interface for managing Cloudflare Tunnels. It allows you
 - 🚇 Create new tunnels
 - ⏯️ Start, stop, and delete tunnels
 - 📊 View the status of all tunnels
+- 🖋️ Edit tunnel configuration files (YAML and JSON) for created tunnels
 - 🌐 Automatically create DNS records for tunnels through cfdns.sh
 
 **Important Notes:**
@@ -44,6 +45,36 @@ This script manages DNS records in Cloudflare, specifically creating CNAME recor
 1. Run the script: `./cfdns.sh`
 2. Follow the prompts to create a DNS record
 
+## 🗂️ Web File Manager & AI Assistant
+
+The project includes a web-based interface that makes file management and system administration easier for non-technical users:
+
+### 🔍 File Search & Management
+- Chat-like interface for finding files: Just type what you're looking for
+- Intuitive file browser with clickable directory structure
+- Built-in editor for common file types (code, text, config files)
+- Drag-and-drop file uploads
+
+### 🤖 AI Assistant
+- Powered by Google Gemini for instant help
+- Ask questions about system administration tasks
+- Get step-by-step guidance for complex operations
+- AI can help troubleshoot issues and suggest solutions
+
+### 💻 Web Terminal
+- Execute commands directly in your browser
+- View command output in real-time
+- Safe execution environment with command validation
+
+**How to Start the Web Interface:**
+1. Make sure you have Go installed
+2. Navigate to the project directory
+3. Run the following command:
+   ```bash
+   go run main.go
+   ```
+4. Open your web browser and go to: http://localhost:12345
+
 ## 🔑 Environment Variables (.env)
 
 The following environment variables are required for the scripts to function:
@@ -77,6 +108,7 @@ The following environment variables are required for the scripts to function:
 2. 🔧 Configure your .env file with the required Cloudflare credentials
 3. 🚇 Run cfmanager.sh to create and manage tunnels (automatically handles DNS)
 4. 🌐 Use cfdns.sh separately if you need manual DNS management
+5. 🖥️ Access the web interface for file management and AI assistance
 
 ## 📱 Moto E5 Play Setup Guide
 
@@ -126,6 +158,7 @@ The following environment variables are required for the scripts to function:
    ```bash
    ssh <termux-username>@<device-ip> -p 8022
    ```
+
 ### File Transfer
 Use Termius SFTP for easy file transfers:
 - Install Termius on your computer
