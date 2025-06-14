@@ -121,7 +121,7 @@ func main() {
 	http.HandleFunc("/api/save-file", handleSaveFile)
 
 	url := "http://localhost:12345"
-	fmt.Printf("Click to open in your browser: %s\n", url)
+	fmt.Printf("Click here to open in your browser: %s\n", url)
 
 	http.ListenAndServe(":12345", nil)
 }
