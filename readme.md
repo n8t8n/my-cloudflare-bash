@@ -45,9 +45,9 @@ This script manages DNS records in Cloudflare, specifically creating CNAME recor
 1. Run the script: `./cfdns.sh`
 2. Follow the prompts to create a DNS record
 
-## 🗂️ Web File Manager & AI Assistant
+## 🗂️ Web File Manager & AI Assistant (GUI)
 
-The project includes a web-based interface that makes file management and system administration easier for non-technical users:
+The project includes a web-based interface (GUI) that makes file management and system administration easier for non-technical users:
 
 ### 🔍 File Search & Management
 - Chat-like interface for finding files: Just type what you're looking for
@@ -66,18 +66,27 @@ The project includes a web-based interface that makes file management and system
 - View command output in real-time
 - Safe execution environment with command validation
 
-**How to Start the Web Interface:**
-1. Make sure you have Go installed
-2. Navigate to the project directory
-3. Run the following command:
+**How to Start the Web Interface (GUI):**
+1. Ensure you have Go installed *within your proot-distro Ubuntu environment*.
+2. Navigate to the `GUI` directory within the project:
    ```bash
+   cd GUI
+   ```
+3. Run the application using the `start.sh` script or directly with Go:
+   ```bash
+   # Using the start script (recommended for backgrounding and logging)
+   ./start.sh
+
+   # Or directly with Go (runs in foreground)
    go run main.go
    ```
-4. Open your web browser and go to: http://localhost:12345
+4. The GUI will start and listen on port `3000`.
+5. Access the web interface from your browser at: `http://localhost:3000`
+   *Note: If accessing from another device on your network, replace `localhost` with the IP address of your Termux device.*
 
 ## 🔑 Environment Variables (.env)
 
-The following environment variables are required for the scripts to function:
+The following environment variables are required for the scripts and GUI to function:
 
 | Variable        | Description                                                                 |
 |-----------------|-----------------------------------------------------------------------------|
@@ -108,7 +117,7 @@ The following environment variables are required for the scripts to function:
 2. 🔧 Configure your .env file with the required Cloudflare credentials
 3. 🚇 Run cfmanager.sh to create and manage tunnels (automatically handles DNS)
 4. 🌐 Use cfdns.sh separately if you need manual DNS management
-5. 🖥️ Access the web interface for file management and AI assistance
+5. 🖥️ Access the web interface (GUI) for file management and AI assistance
 
 ## 📱 Moto E5 Play Setup Guide
 
