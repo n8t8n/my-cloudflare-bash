@@ -92,7 +92,8 @@ func SetSession(w http.ResponseWriter) {
 		MaxAge:   CookieMaxAge,
 		HttpOnly: true,
 		Secure:   !devMode,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
+		Domain:   "",
 	})
 }
 
@@ -104,7 +105,7 @@ func ClearSession(w http.ResponseWriter) {
 		MaxAge:   -1,
 		HttpOnly: true,
 		Secure:   !devMode,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
