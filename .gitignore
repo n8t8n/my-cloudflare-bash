@@ -9,3 +9,4 @@
 .env.production
 GUI/.env
 GUI/.DS_Store
+GUI/password.dat
