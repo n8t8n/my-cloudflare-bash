@@ -21,7 +21,13 @@ const (
 var (
 	hashedPassword []byte
 	passwordMutex  sync.RWMutex
+	devMode        bool
 )
+
+// SetDevMode sets the development mode
+func SetDevMode(isDev bool) {
+	devMode = isDev
+}
 
 func init() {
 	// Load the hashed password from the .dat file on startup
@@ -85,7 +91,7 @@ func SetSession(w http.ResponseWriter) {
 		Path:     "/",
 		MaxAge:   CookieMaxAge,
 		HttpOnly: true,
-		Secure:   true, // Ensure cookie is only sent over HTTPS
+		Secure:   !devMode,
 		SameSite: http.SameSiteStrictMode,
 	})
 }
@@ -97,7 +103,7 @@ func ClearSession(w http.ResponseWriter) {
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   !devMode,
 		SameSite: http.SameSiteStrictMode,
 	})
 }

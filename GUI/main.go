@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"cf-manager/auth"
 	"cf-manager/handlers"
 	"cf-manager/middleware"
 
@@ -30,6 +31,10 @@ func rateLimitMiddleware(next http.Handler) http.Handler {
 }
 
 func main() {
+	// Set dev mode based on command-line argument or environment variable
+	devMode := os.Getenv("DEV_MODE") == "true"
+	auth.SetDevMode(devMode)
+
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
