@@ -30,6 +30,18 @@ func rateLimitMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		if r.Method == "OPTIONS" {
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	// Set dev mode based on command-line argument or environment variable
 	devMode := os.Getenv("DEV_MODE") == "true"
@@ -49,6 +61,9 @@ func main() {
 	}
 
 	r := mux.NewRouter()
+
+	// Apply CORS middleware
+	r.Use(corsMiddleware)
 
 	// Public routes
 	r.HandleFunc("/", handlers.IndexHandler).Methods("GET")
