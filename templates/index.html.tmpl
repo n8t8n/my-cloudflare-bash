@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal & AI Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-container {
+            max-width: 768px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .tab-header {
+            display: flex;
+            border-bottom: 1px solid #333;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 12px 24px;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-button.active {
+            color: #fff;
+            border-bottom-color: #fff;
+        }
+
+        .tab-button:hover {
+            color: #ccc;
+        }
+
+        .tab-content {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        .terminal-header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+
+        .terminal-header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .current-path {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .ai-header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+
+        .ai-header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .ai-header p {
+            font-size: 14px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #fff;
+            color: #000;
+        }
+
+        .message.assistant .message-avatar {
+            background: #333;
+            color: #fff;
+        }
+
+        .message.ai .message-avatar {
+            background: #4285f4;
+            color: #fff;
+        }
+
+        .message-content {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 12px 16px;
+            max-width: 80%;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: #fff;
+            color: #000;
+            border-color: #ddd;
+        }
+
+        .command-info {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+
+        .exit-code {
+            font-size: 11px;
+            margin-top: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .exit-code.success {
+            background: #1a4d1a;
+            color: #4ade80;
+        }
+
+        .exit-code.error {
+            background: #4d1a1a;
+            color: #f87171;
+        }
+
+        .interactive-warning {
+            background: #4d3d1a;
+            color: #fbbf24;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+
+        .directory-listing {
+            margin-top: 8px;
+        }
+
+        .directory-listing a {
+            color: #0ea5e9;
+            text-decoration: none;
+            margin-right: 12px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+
+        .directory-listing a:hover {
+            text-decoration: underline;
+        }
+
+        .file-item {
+            color: #888;
+            margin-right: 12px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+
+        .executable-file {
+            color: #4ade80;
+            margin-right: 12px;
+            display: inline-block;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+
+        .executable-file:hover {
+            text-decoration: underline;
+        }
+
+        /* --- Added style for editable files --- */
+        .file-item-editable {
+            color: #facc15; /* Yellow color */
+            text-decoration: underline dotted; /* Dotted underline */
+            margin-right: 12px;
+            display: inline-block;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+
+        .file-item-editable:hover {
+            text-decoration: underline;
+        }
+        /* --- End added style --- */
+
+
+        .input-container {
+            border-top: 1px solid #333;
+            padding: 20px 0;
+        }
+
+        .input-form {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .ai-input {
+            flex: 1;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            font-size: 14px;
+            outline: none;
+            resize: vertical;
+            min-height: 44px;
+            max-height: 120px;
+        }
+
+        .chat-input:focus, .ai-input:focus {
+            border-color: #555;
+        }
+
+        .ai-input:focus {
+            border-color: #4285f4;
+        }
+
+        .chat-input::placeholder, .ai-input::placeholder {
+            color: #666;
+        }
+
+        .send-button {
+            background: #fff;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            height: 44px;
+        }
+
+        .ai-send-button {
+            background: #4285f4;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            height: 44px;
+        }
+
+        .send-button:hover {
+            background: #f0f0f0;
+        }
+
+        .ai-send-button:hover {
+            background: #3367d6;
+        }
+
+        .send-button:disabled, .ai-send-button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #888;
+        }
+
+        .loading-dots {
+            display: inline-flex;
+            gap: 2px;
+        }
+
+        .loading-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #888;
+            animation: loading 1.4s infinite ease-in-out;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes loading {
+            0%, 80%, 100% { opacity: 0.3; }
+            40% { opacity: 1; }
+        }
+
+        .error-message {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .api-key-notice {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        .api-key-notice strong {
+            color: #fff;
+        }
+
+        .command-suggestions {
+            margin-top: 12px;
+            padding: 8px;
+            background: #1a1a1a;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #888;
+        }
+
+        .command-suggestions strong {
+            color: #ccc;
+        }
+
+        /* --- Added File Editor styles --- */
+        .file-editor-overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .file-editor-content {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            width: 90%;
+            max-width: 800px;
+            height: 80%; /* Make it take up most of the height */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Hide scrollbars on the content div itself */
+        }
+
+        .file-editor-header {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-editor-path {
+            font-size: 12px;
+            color: #888;
+            word-break: break-all;
+        }
+
+        .file-editor-textarea {
+            flex: 1; /* Takes up remaining space */
+            background: #000;
+            border: 1px solid #555;
+            border-radius: 4px;
+            padding: 10px;
+            color: #fff;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+            resize: none; /* Disable default textarea resize */
+            margin-bottom: 15px;
+            overflow: auto; /* Add scrollbars if content overflows */
+        }
+
+        .file-editor-textarea:focus {
+            border-color: #777;
+        }
+
+        .file-editor-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .file-editor-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .file-editor-save {
+            background: #4ade80; /* Green */
+            color: #000;
+        }
+
+        .file-editor-save:hover {
+            background: #22c55e;
+        }
+
+        .file-editor-cancel {
+            background: #666; /* Grey */
+            color: #fff;
+        }
+
+        .file-editor-cancel:hover {
+            background: #888;
+        }
+
+        .file-editor-status {
+             font-size: 12px;
+             color: #fff;
+             margin-right: auto; /* Push status to the left */
+             display: flex;
+             align-items: center;
+             gap: 8px;
+        }
+
+        .file-editor-status.error {
+            color: #ef4444;
+        }
+
+        .file-editor-status.success {
+            color: #4ade80;
+        }
+
+        /* --- End File Editor styles --- */
+
+
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="tab-header">
+            <button class="tab-button active" onclick="switchTab('terminal')">🖥️ Terminal</button>
+            <button class="tab-button" onclick="switchTab('ai')">🤖 AI Chat</button>
+        </div>
+
+        <!-- Terminal Tab -->
+        <div class="tab-content active" id="terminal-tab">
+            <div class="terminal-header">
+                <h1>Terminal Chat</h1>
+                <div class="current-path">{{.CurrentPath}}</div>
+            </div>
+
+            <div class="messages" id="terminal-messages">
+                {{if .CommandExecuted}}
+                <div class="message user">
+                    <div class="message-avatar">U</div>
+                    <div class="message-content">
+                        <pre>$ {{.Command}}</pre>
+                    </div>
+                </div>
+
+                <div class="message assistant">
+                    <div class="message-avatar">T</div>
+                    <div class="message-content">
+                        {{if .IsExecutable}}
+                        <div class="command-info">Executing {{.FileType}} file: {{.CommandName}}</div>
+                        {{end}}
+
+                        {{if .IsInteractive}}
+                        <div class="interactive-warning">⚠️ Interactive Command Detected</div>
+                        {{end}}
+
+                        {{if .Output}}
+                        <pre>{{.Output}}</pre>
+                        {{else if not .IsInteractive}}
+                        <pre class="command-info">[No output]</pre>
+                        {{end}}
+
+                        {{if not .IsInteractive}}
+                            {{if eq .ExitCode 0}}
+                            <div class="exit-code success">Exit code: 0 (Success)</div>
+                            {{else}}
+                            <div class="exit-code error">Exit code: {{.ExitCode}} (Error)</div>
+                            {{end}}
+                        {{end}}
+
+                        {{if .Error}}
+                            {{if not .Output}} <!-- Only show error if no output was captured -->
+                            <pre class="error">Error: {{.Error}}</pre>
+                            {{end}}
+                        {{end}}
+
+                        {{if .IsInteractive}}
+                            <div class="command-suggestions">
+                                <strong>Alternatives:</strong><br>
+                                • For file editing: Use <code>cat filename</code> to view, or edit files locally<br>
+                                • For process monitoring: Use <code>ps aux</code> instead of top<br>
+                                • For file viewing: Use <code>cat filename</code> instead of less/more
+                            </div>
+                        {{end}}
+                    </div>
+                </div>
+                {{end}}
+
+                <div class="message assistant">
+                    <div class="message-avatar">T</div>
+                    <div class="message-content">
+                        <pre>Directory listing:</pre>
+                        <div class="directory-listing">
+                            {{if .DirError}}
+                            <pre class="error">ls: cannot access "{{.CurrentPath}}": {{.DirError}}</pre>
+                            {{else}}
+                                {{range .Entries}}
+                                    {{if .IsDir}}
+                                    <a href="/?path={{.FullPath}}">{{.Name}}/</a>
+                                    {{else if .IsExecutable}}
+                                    <a href="/?path={{.ParentPath}}&cmd=./{{.Name}}" class="executable-file" title="{{.FileType}} executable">{{.Name}}*</a>
+                                    {{else if .IsEditable}} <!-- Check for IsEditable -->
+                                    <span class="file-item-editable" data-path="{{.FullPath}}" title="Click to edit">{{.Name}}</span> <!-- Add data-path -->
+                                    {{else}}
+                                    <span class="file-item">{{.Name}}</span>
+                                    {{end}}
+                                {{end}}
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <form class="input-form" method="GET" action="/">
+                    <input type="hidden" name="path" value="{{.CurrentPath}}"/>
+                    <input
+                        class="chat-input"
+                        name="cmd"
+                        placeholder="Type a command (e.g., ls, cat file.txt, node app.js, ./script.sh)..."
+                        autofocus
+                        autocomplete="off"
+                    />
+                    <button type="submit" class="send-button">Send</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- AI Chat Tab -->
+        <div class="tab-content" id="ai-tab">
+            <div class="ai-header">
+                <h1>🤖 AI Assistant</h1>
+                <p>Powered by Google Gemini</p>
+            </div>
+
+            <div class="messages" id="ai-messages">
+                <div class="message ai">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        Hello! I'm your AI assistant powered by Google Gemini. I can help you with programming questions, explain concepts, debug code, or just have a conversation. What would you like to know?
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <form class="input-form" id="ai-form">
+                    <textarea
+                        class="ai-input"
+                        id="ai-input"
+                        placeholder="Ask me anything..."
+                        rows="1"
+                    ></textarea>
+                    <button type="submit" class="ai-send-button" id="ai-send-button">Send</button>
+                </form>
+                <div class="error-message" id="error-message" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- Added File Editor HTML Structure --- -->
+    <div class="file-editor-overlay" id="file-editor-overlay">
+        <div class="file-editor-content">
+            <div class="file-editor-header">
+                <span class="file-editor-path" id="file-editor-path"></span>
+                 <div class="file-editor-status" id="file-editor-status"></div>
+            </div>
+            <textarea class="file-editor-textarea" id="file-editor-textarea"></textarea>
+            <div class="file-editor-buttons">
+                <button class="file-editor-cancel" id="file-editor-cancel">Cancel</button>
+                <button class="file-editor-save" id="file-editor-save">Save</button>
+            </div>
+        </div>
+    </div>
+    <!-- --- End File Editor HTML Structure --- -->
+
+
+    <script>
+        let currentTab = 'terminal';
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+
+            currentTab = tabName;
+
+            if (tabName === 'terminal') {
+                document.querySelector('.chat-input').focus();
+            } else {
+                document.getElementById('ai-input').focus();
+            }
+        }
+
+        const terminalMessages = document.getElementById('terminal-messages');
+        terminalMessages.scrollTop = terminalMessages.scrollHeight;
+
+        // Focus on the terminal input only if it's the active tab on load
+        if (currentTab === 'terminal') {
+             document.querySelector('.chat-input').focus();
+        }
+
+
+        document.querySelector('form[action="/"]').addEventListener('submit', function(e) {
+            const input = document.querySelector('.chat-input');
+            if (!input.value.trim()) {
+                e.preventDefault();
+                return;
+            }
+
+            const button = document.querySelector('.send-button');
+            button.disabled = true;
+            button.textContent = 'Executing...';
+        });
+
+        // AI Chat functionality
+        const aiMessagesContainer = document.getElementById('ai-messages');
+        const aiForm = document.getElementById('ai-form');
+        const aiInput = document.getElementById('ai-input');
+        const aiSendButton = document.getElementById('ai-send-button');
+        const errorMessage = document.getElementById('error-message');
+
+        // --- Add conversation history storage ---
+        let conversationHistory = [
+             // Start with the initial AI message
+             {
+                role: 'model',
+                parts: [{ text: "Hello! I'm your AI assistant powered by Google Gemini. I can help you with programming questions, explain concepts, debug code, or just have a conversation. What would you like to know?" }]
+             }
+        ];
+
+        // Function to render messages from history (useful on initial load)
+        function renderHistory() {
+             aiMessagesContainer.innerHTML = ''; // Clear existing messages (except initial hardcoded one)
+             conversationHistory.forEach(msg => {
+                // Only display user/model roles
+                if (msg.role === 'user' || msg.role === 'model') {
+                    // Find the first text part to display
+                    const textPart = msg.parts.find(part => part.text);
+                    if (textPart) {
+                         addAIMessageToDOM(textPart.text, msg.role);
+                    }
+                }
+             });
+             aiMessagesContainer.scrollTop = aiMessagesContainer.scrollHeight;
+        }
+
+        // Modified addAIMessage function to *only* add to history
+        function addAIMessageToHistory(content, type) {
+             conversationHistory.push({
+                role: type === 'user' ? 'user' : 'model',
+                parts: [{ text: content }] // Assuming text part for now
+             });
+        }
+
+        // New function to add message to the DOM
+        function addAIMessageToDOM(content, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + (type === 'user' ? 'user' : (type === 'model' ? 'assistant' : 'ai')); // Use 'assistant' class for 'model' role
+
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = type === 'user' ? 'U' : 'AI';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = content; // Use textContent for security
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+
+            aiMessagesContainer.appendChild(messageDiv);
+            aiMessagesContainer.scrollTop = aiMessagesContainer.scrollHeight;
+        }
+
+        // Initial render of the starting message
+        renderHistory();
+
+
+        aiInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        aiInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                aiForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        aiForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const message = aiInput.value.trim();
+            if (!message) return;
+
+            errorMessage.style.display = 'none';
+
+            // --- Add user message to history and DOM ---
+            addAIMessageToHistory(message, 'user');
+            addAIMessageToDOM(message, 'user');
+            // --- End Add ---
+
+            aiInput.value = '';
+            aiInput.style.height = 'auto';
+            aiSendButton.disabled = true;
+            aiSendButton.textContent = 'Sending...';
+
+            const loadingId = addLoadingMessage();
+
+            try {
+                // --- Send full history in the request body ---
+                const response = await fetch('/api/gemini', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ contents: conversationHistory }) // Send the whole history
+                });
+                // --- End Send ---
+
+                const data = await response.json();
+
+                removeLoadingMessage(loadingId);
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // --- Add AI response to history and DOM ---
+                addAIMessageToHistory(data.response, 'model'); // Add to history with 'model' role
+                addAIMessageToDOM(data.response, 'model');   // Add to DOM
+                 // --- End Add ---
+
+            } catch (error) {
+                removeLoadingMessage(loadingId);
+                errorMessage.textContent = 'Error: ' + error.message;
+                errorMessage.style.display = 'block';
+                console.error('AI Error:', error);
+            } finally {
+                aiSendButton.disabled = false;
+                aiSendButton.textContent = 'Send';
+                aiInput.focus();
+            }
+        });
+
+        // The addAIMessage function is now split, this one is for DOM only
+        // and the one above is for history only.
+        // Keeping the addLoadingMessage and removeLoadingMessage as they are
+
+        function addLoadingMessage() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai'; // Loading message uses 'ai' class
+            messageDiv.id = 'loading-message-' + Date.now();
+
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = 'AI';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content loading';
+            contentDiv.innerHTML = 'Thinking<div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>';
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+
+            aiMessagesContainer.appendChild(messageDiv);
+            aiMessagesContainer.scrollTop = aiMessagesContainer.scrollHeight;
+
+            return messageDiv.id;
+        }
+
+        function removeLoadingMessage(id) {
+            const loadingMessage = document.getElementById(id);
+            if (loadingMessage) {
+                loadingMessage.remove();
+            }
+        }
+
+        // --- Added File Editor JavaScript ---
+        const fileEditorOverlay = document.getElementById('file-editor-overlay');
+        const fileEditorPath = document.getElementById('file-editor-path');
+        const fileEditorTextarea = document.getElementById('file-editor-textarea');
+        const fileEditorSaveButton = document.getElementById('file-editor-save');
+        const fileEditorCancelButton = document.getElementById('file-editor-cancel');
+        const fileEditorStatus = document.getElementById('file-editor-status');
+
+        let currentEditingFilePath = ''; // Store the path of the file being edited
+
+        // Event listener for clicks on the directory listing
+        document.querySelector('.directory-listing').addEventListener('click', async function(event) {
+            const target = event.target;
+            // Check if the clicked element is an editable file span
+            if (target.classList.contains('file-item-editable')) {
+                event.preventDefault(); // Prevent any default link behavior
+
+                const filePath = target.getAttribute('data-path');
+                if (!filePath) return; // Should not happen if data-path is set correctly
+
+                currentEditingFilePath = filePath; // Store the path
+
+                // Show a loading indicator in the status area
+                showEditorStatus('Loading...', 'loading');
+
+                // Fetch file content from the backend
+                try {
+                    const response = await fetch(`/api/get-file?path=${encodeURIComponent(filePath)}`);
+                    const data = await response.json();
+
+                    if (data.error) {
+                        showEditorStatus('Error loading file: ' + data.error, 'error');
+                         // Hide editor after a delay if there's an error
+                         setTimeout(hideFileEditor, 3000);
+                    } else {
+                        fileEditorPath.textContent = filePath; // Display the file path
+                        fileEditorTextarea.value = data.content; // Populate the textarea
+                        fileEditorOverlay.style.display = 'flex'; // Show the editor
+                        fileEditorTextarea.focus(); // Focus the textarea
+                         showEditorStatus('', 'hidden'); // Clear status on successful load
+                    }
+                } catch (error) {
+                    showEditorStatus('Network error loading file: ' + error.message, 'error');
+                     setTimeout(hideFileEditor, 3000);
+                }
+            }
+        });
+
+        // Event listener for the Cancel button
+        fileEditorCancelButton.addEventListener('click', function() {
+            hideFileEditor();
+        });
+
+        // Event listener for the Save button
+        fileEditorSaveButton.addEventListener('click', async function() {
+            if (!currentEditingFilePath) return; // No file is being edited
+
+            const newContent = fileEditorTextarea.value;
+
+            // Show a loading indicator in the status area
+            showEditorStatus('Saving...', 'loading');
+            fileEditorSaveButton.disabled = true; // Disable button while saving
+
+            try {
+                const response = await fetch('/api/save-file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ path: currentEditingFilePath, content: newContent }),
+                });
+                const data = await response.json();
+
+                if (data.error) {
+                    showEditorStatus('Error saving file: ' + data.error, 'error');
+                } else if (data.success) {
+                    showEditorStatus('File saved successfully!', 'success');
+                     // Hide editor after a short delay on success
+                     setTimeout(hideFileEditor, 1500);
+                } else {
+                     // Handle unexpected response structure
+                     showEditorStatus('Unexpected response from server.', 'error');
+                }
+
+            } catch (error) {
+                showEditorStatus('Network error saving file: ' + error.message, 'error');
+            } finally {
+                fileEditorSaveButton.disabled = false; // Re-enable button
+            }
+        });
+
+        // Function to hide the file editor
+        function hideFileEditor() {
+            fileEditorOverlay.style.display = 'none';
+            fileEditorPath.textContent = '';
+            fileEditorTextarea.value = '';
+            currentEditingFilePath = ''; // Clear the stored path
+            showEditorStatus('', 'hidden'); // Clear status
+        }
+
+        // Function to show status messages in the editor header
+        function showEditorStatus(message, type) {
+            fileEditorStatus.textContent = message;
+            fileEditorStatus.className = 'file-editor-status'; // Reset classes
+            if (type === 'loading') {
+                 // Add loading dots animation if desired
+                 fileEditorStatus.innerHTML = message + '<div class="loading-dots" style="display:inline-flex;"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>';
+            } else if (type && type !== 'hidden') {
+                fileEditorStatus.classList.add(type); // Add 'error' or 'success' class
+            }
+        }
+
+        // --- End File Editor JavaScript ---
+
+    </script>
+</body>
+</html>
