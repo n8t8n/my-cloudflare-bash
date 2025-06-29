@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"html/template"
 	"net/http"
 )
@@ -51,6 +53,7 @@ body {
 <div class="logo">☁️ CF-MANAGER</div>
 <div class="prompt">admin@cloudflare:~$</div>
 <input type="password" class="input" id="password" placeholder="enter password" autofocus>
+<input type="hidden" id="csrf_token" value="{{.CSRFToken}}">
 <div class="message" id="message"></div>
 
 <script>
@@ -63,7 +66,10 @@ document.getElementById('password').addEventListener('keydown', function(e) {
 
     fetch('/login', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.getElementById('csrf_token').value
+      },
       body: JSON.stringify({ password })
     })
     .then(res => res.json())
@@ -97,7 +103,23 @@ func init() {
 	}
 }
 
+func GenerateCSRFToken() (string, error) {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(b), nil
+}
+
 func RenderLogin(w http.ResponseWriter, data interface{}) error {
+	csrfToken, err := GenerateCSRFToken()
+	if err != nil {
+		return err
+	}
+
 	w.Header().Set("Content-Type", "text/html")
-	return loginTemplate.Execute(w, data)
+	return loginTemplate.Execute(w, map[string]interface{}{
+		"CSRFToken": csrfToken,
+	})
 }

@@ -372,6 +372,7 @@ body {
             <button class="dropdown-item" onclick="showCreateTunnelModal()">Create Tunnel</button>
             <button class="dropdown-item" onclick="refreshAll()">Refresh All</button>
             <button class="dropdown-item" onclick="logout()">Logout</button>
+            <button class="dropdown-item" onclick="showChangePasswordModal()">Change Password</button>
           </div>
         </div>
       </div>
@@ -520,6 +521,27 @@ body {
         <div class="modal-actions">
           <button type="submit" class="btn btn-primary">CREATE TUNNEL</button>
           <button type="button" class="btn btn-secondary" onclick="closeModal('tunnel-modal')">CANCEL</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div class="modal-overlay" id="change-password-modal">
+    <div class="modal">
+      <div class="modal-header">Change Password</div>
+      <form id="change-password-form">
+        <div class="form-group">
+          <label class="form-label">Old Password</label>
+          <input type="password" class="form-input" id="old-password" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input type="password" class="form-input" id="new-password" required>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">CHANGE PASSWORD</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('change-password-modal')">CANCEL</button>
         </div>
       </form>
     </div>
@@ -923,11 +945,43 @@ body {
       }, 3000);
     }
 
+    function showChangePasswordModal() {
+      document.getElementById('change-password-form').reset();
+      openModal('change-password-modal');
+    }
+
+    document.getElementById('change-password-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const oldPassword = document.getElementById('old-password').value;
+      const newPassword = document.getElementById('new-password').value;
+
+      try {
+        const response = await fetch('/change-password', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ oldPassword, newPassword })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          showToast('Password changed successfully', 'success');
+          closeModal('change-password-modal');
+        } else {
+          showToast(result.error || 'Failed to change password', 'error');
+        }
+      } catch (error) {
+        showToast('Server error', 'error');
+      }
+    });
+
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         closeModal('dns-modal');
         closeModal('edit-dns-modal');
         closeModal('tunnel-modal');
+        closeModal('change-password-modal');
       }
     });
   </script>

@@ -4,13 +4,30 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"cf-manager/handlers"
 	"cf-manager/middleware"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"golang.org/x/time/rate"
 )
+
+var limiter = rate.NewLimiter(rate.Every(1*time.Minute), 20) // 5 requests per minute
+
+func rateLimitMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Apply rate limiting only to the login endpoint
+		if r.URL.Path == "/login" && r.Method == "POST" {
+			if !limiter.Allow() {
+				http.Error(w, "Too many requests", http.StatusTooManyRequests)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
 
 func main() {
 	// Load .env file
@@ -32,6 +49,7 @@ func main() {
 	r.HandleFunc("/", handlers.IndexHandler).Methods("GET")
 	r.HandleFunc("/login", handlers.LoginHandler).Methods("POST")
 	r.HandleFunc("/logout", handlers.LogoutHandler).Methods("GET")
+	r.HandleFunc("/change-password", handlers.ChangePasswordHandler).Methods("POST")
 
 	// Protected routes
 	protected := r.PathPrefix("/").Subrouter()
@@ -55,6 +73,9 @@ func main() {
 
 	// System routes
 	protected.HandleFunc("/system/status", handlers.SystemStatusHandler).Methods("GET")
+
+	// Apply rate limiting middleware
+	r.Use(rateLimitMiddleware)
 
 	// Start the server
 	port := os.Getenv("PORT")

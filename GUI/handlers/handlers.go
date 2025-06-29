@@ -211,3 +211,22 @@ func SystemStatusHandler(w http.ResponseWriter, r *http.Request) {
 		"uptime": "running",
 	})
 }
+
+func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
+	var req auth.ChangePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
+		return
+	}
+
+	success := auth.ChangePassword(req.OldPassword, req.NewPassword)
+	response := auth.ChangePasswordResponse{Success: success}
+
+	w.Header().Set("Content-Type", "application/json")
+	if success {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusUnauthorized)
+	}
+	json.NewEncoder(w).Encode(response)
+}
