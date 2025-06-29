@@ -12,7 +12,7 @@ const (
 	CookieMaxAge = 3600
 )
 
-// Hashed password for "fatmike@098"
+// Hashed password for "cf-manager"
 var hashedPassword = []byte("$2a$10$3eZ7Xz8X1Xz8X1Xz8X1XzO.3eZ7Xz8X1Xz8X1Xz8X1XzO")
 
 type LoginRequest struct {
