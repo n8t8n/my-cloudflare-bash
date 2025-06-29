@@ -21,7 +21,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	success := auth.ValidatePassword(req.Password)
 	if success {
-		auth.SetSession(w)
+		// Pass the request to SetSession so it can determine the appropriate cookie settings
+		auth.SetSession(w, r)
 	}
 
 	resp := auth.LoginResponse{Success: success}

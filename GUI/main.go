@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"cf-manager/auth"
@@ -15,7 +16,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-var limiter = rate.NewLimiter(rate.Every(1*time.Minute), 20) // 5 requests per minute
+var limiter = rate.NewLimiter(rate.Every(1*time.Minute), 20) // 20 requests per minute
 
 func rateLimitMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -32,17 +33,48 @@ func rateLimitMiddleware(next http.Handler) http.Handler {
 
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Allow all origins (or specify specific origins)
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// Get the origin from the request
+		origin := r.Header.Get("Origin")
+
+		// Allow requests from localhost and local network IPs
+		if origin != "" {
+			// Allow localhost and 192.168.x.x, 10.x.x.x, 172.16-31.x.x ranges
+			if strings.Contains(origin, "localhost") ||
+				strings.Contains(origin, "127.0.0.1") ||
+				strings.Contains(origin, "192.168.") ||
+				strings.Contains(origin, "10.") ||
+				(strings.Contains(origin, "172.") && isPrivateIP172(origin)) {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+			}
+		} else {
+			// If no origin header, allow all (for direct IP access)
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+		}
+
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-		w.Header().Set("Access-Control-Allow-Credentials", "true") // Allow credentials (cookies)
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// Helper function to check if IP is in 172.16.0.0/12 range
+func isPrivateIP172(origin string) bool {
+	// Simple check for 172.16-31.x.x range
+	parts := strings.Split(origin, ".")
+	if len(parts) >= 2 {
+		if parts[0] == "172" {
+			// Check if second octet is between 16-31
+			secondOctet := parts[1]
+			return secondOctet >= "16" && secondOctet <= "31"
+		}
+	}
+	return false
 }
 
 func main() {
@@ -65,7 +97,7 @@ func main() {
 
 	r := mux.NewRouter()
 
-	// Apply CORS middleware
+	// Apply CORS middleware first
 	r.Use(corsMiddleware)
 
 	// Public routes
@@ -107,5 +139,6 @@ func main() {
 	}
 
 	log.Printf("Cloudflare Manager running on :%s", port)
+	log.Printf("Dev mode: %v", devMode)
 	log.Fatal(http.ListenAndServe("0.0.0.0:"+port, r))
 }

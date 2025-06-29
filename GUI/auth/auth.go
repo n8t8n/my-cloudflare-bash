@@ -84,17 +84,37 @@ type ChangePasswordResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-func SetSession(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{
+func SetSession(w http.ResponseWriter, r *http.Request) {
+	// Get the host from the request to determine if we're on localhost or IP
+	host := r.Host
+	isLocalhost := strings.Contains(host, "localhost") || strings.Contains(host, "127.0.0.1")
+
+	// For local network access, we need to be more permissive with cookie settings
+	cookie := &http.Cookie{
 		Name:     CookieName,
 		Value:    CookieValue,
 		Path:     "/",
 		MaxAge:   CookieMaxAge,
 		HttpOnly: true,
-		Secure:   !devMode,
+		// Only use Secure flag for HTTPS or localhost
+		Secure:   false, // Set to false for local network access over HTTP
 		SameSite: http.SameSiteLaxMode,
-		Domain:   "",
-	})
+	}
+
+	// If we're in production and using HTTPS, enable secure flag
+	if !devMode && r.Header.Get("X-Forwarded-Proto") == "https" {
+		cookie.Secure = true
+	}
+
+	// For localhost, we can be more restrictive
+	if isLocalhost {
+		cookie.Domain = ""
+	} else {
+		// For IP access, don't set domain to allow cross-subdomain access
+		cookie.Domain = ""
+	}
+
+	http.SetCookie(w, cookie)
 }
 
 func ClearSession(w http.ResponseWriter) {
@@ -104,7 +124,7 @@ func ClearSession(w http.ResponseWriter) {
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
-		Secure:   !devMode,
+		Secure:   false, // Match the secure setting used in SetSession
 		SameSite: http.SameSiteLaxMode,
 	})
 }
