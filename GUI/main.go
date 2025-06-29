@@ -104,5 +104,5 @@ func main() {
 	}
 
 	log.Printf("Cloudflare Manager running on :%s", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	log.Fatal(http.ListenAndServe("0.0.0.0:"+port, r))
 }
