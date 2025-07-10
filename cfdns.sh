@@ -101,15 +101,21 @@ create_record() {
 }
 
 list_records() {
-  echo -e "${CYAN}=== Listado de registros DNS en zona $CF_DOMAIN ===${RESET}"
+  echo -e "${CYAN}=== List of CNAME subdomains and IDs in zone $CF_DOMAIN ===${RESET}"
   
   RESPONSE=$(curl -s -X GET "$CF_API_BASE/zones/$CF_ZONE_ID/dns_records?per_page=100" \
     -H "Authorization: Bearer $CF_API_TOKEN" \
     -H "Content-Type: application/json")
 
-  echo "$RESPONSE" | grep -oP '"id":"\K[^"]+' | while read -r id; do
-    name=$(echo "$RESPONSE" | grep -oP '"id":"'"$id"'"[^}]*"name":"\K[^"]+')
-    echo -e "ID: $id\tName: $name"
+  # Print the ID and subdomain for CNAME records
+  echo "$RESPONSE" | grep -o '{[^}]*}' | while read -r record; do
+    type=$(echo "$record" | grep -o '"type":"[^"]*' | cut -d'"' -f4)
+    name=$(echo "$record" | grep -o '"name":"[^"]*' | cut -d'"' -f4)
+    id=$(echo "$record" | grep -o '"id":"[^"]*' | cut -d'"' -f4)
+    if [[ "$type" == "CNAME" && "$name" != "$CF_DOMAIN" ]]; then
+      subdomain=${name%.$CF_DOMAIN}
+      echo "ID: $id   Subdomain: $subdomain"
+    fi
   done
 }
 
