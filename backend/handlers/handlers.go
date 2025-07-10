@@ -7,6 +7,7 @@ import (
 
 	"cf-manager/auth"
 	"cf-manager/dns"
+	"cf-manager/templates"
 	"cf-manager/tunnels"
 
 	"github.com/gorilla/mux"
@@ -32,8 +33,18 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	auth.ClearSession(w)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]bool{"success": true})
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func IndexHandler(w http.ResponseWriter, r *http.Request) {
+	auth.RenderLogin(w, nil)
+}
+
+func DashboardHandler(w http.ResponseWriter, r *http.Request) {
+	data := &templates.TemplateData{
+		Title: "Cloudflare Manager",
+	}
+	templates.RenderDashboard(w, data)
 }
 
 // DNS Handlers
