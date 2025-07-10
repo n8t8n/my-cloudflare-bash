@@ -275,7 +275,7 @@ status_tuneles() {
     fi
 
     print_line
-    echo -e "${COLOR_BLUE}Commands:${COLOR_RESET} start <name> | stop <name> | delete <name> | edit <name> | export <name>"
+    echo -e "${COLOR_BLUE}Commands:${COLOR_RESET} start <name> | stop <name> | delete <name> | edit <name> | export <name> | export-all"
     echo -e "          start-all | stop-all | delete-all | refresh | back"
     print_line
     echo -n ">> "
@@ -287,6 +287,11 @@ status_tuneles() {
       delete) eliminar_tunel "$param" ;;
       edit) edit_tunel "$param" ;;
       export) exportar_tunel "$param" ;;
+      export-all)
+        for conf in "${TUNNELS[@]}"; do
+          NAME=$(basename "$conf" | sed 's/-config.yml//')
+          exportar_tunel "$NAME"
+        done ;;
       start-all)
         for conf in "${TUNNELS[@]}"; do
           NAME=$(basename "$conf" | sed 's/-config.yml//')
@@ -407,9 +412,28 @@ EOF
       stop_tunel "$NAME"
       exit 0
       ;;
+    export)
+      # Usage: export <subdomain>
+      NAME="$1"
+      if [[ -z "$NAME" ]]; then
+        echo "Usage: $0 export <subdomain>"
+        exit 1
+      fi
+      exportar_tunel "$NAME"
+      exit 0
+      ;;
+    export-all)
+      # Export all tunnels
+      TUNNELS=( $(find "$CONFIG_DIR" -name '*-config.yml') )
+      for conf in "${TUNNELS[@]}"; do
+        NAME=$(basename "$conf" | sed 's/-config.yml//')
+        exportar_tunel "$NAME"
+      done
+      exit 0
+      ;;
     *)
       echo "Unknown command: $ACTION"
-      echo "Available commands: create, start, stop"
+      echo "Available commands: create, start, stop, export, export-all"
       exit 1
       ;;
   esac
