@@ -556,7 +556,8 @@ body {
     document.addEventListener('DOMContentLoaded', function() {
       fetchDNSRecords();
       fetchTunnels();
-      setInterval(fetchTunnels, 5000); // Refresh tunnels every 5 seconds
+      // Removed automatic polling for Termux optimization
+      // setInterval(fetchTunnels, 5000); // Refresh tunnels every 5 seconds
     });
 
     // Close dropdown when clicking outside
@@ -581,6 +582,23 @@ body {
       
       document.querySelector('.tab[onclick="switchTab(\'' + tabName + '\')"]').classList.add('active');
       document.getElementById(tabName + '-tab').classList.add('active');
+      
+      // Refresh data when switching tabs for better UX
+      if (tabName === 'tunnels') {
+        fetchTunnels();
+      } else if (tabName === 'dns') {
+        fetchDNSRecords();
+      }
+    }
+
+    // Debounced refresh to prevent excessive API calls
+    let refreshTimeout;
+    function debouncedRefresh() {
+      clearTimeout(refreshTimeout);
+      refreshTimeout = setTimeout(() => {
+        fetchTunnels();
+        fetchDNSRecords();
+      }, 2000); // Wait 2 seconds after last action
     }
 
     async function fetchDNSRecords() {
@@ -602,9 +620,13 @@ body {
         const response = await fetch('/tunnels');
         const data = await response.json();
         console.log('Tunnels received:', data); // Debug log
-        tunnels = data || [];
-        renderTunnels();
-        updateStats();
+        
+        // Only update if data changed (optimization for Termux)
+        if (JSON.stringify(data) !== JSON.stringify(tunnels)) {
+          tunnels = data || [];
+          renderTunnels();
+          updateStats();
+        }
       } catch (error) {
         console.error('Tunnels fetch error:', error); // Debug log
         showToast('Failed to fetch tunnels', 'error');
@@ -864,7 +886,8 @@ body {
 
         if (response.ok) {
           showToast('Tunnel started', 'success');
-          fetchTunnels();
+          // Wait 1 second for process to start, then update
+          setTimeout(fetchTunnels, 1000);
         } else {
           showToast('Failed to start tunnel', 'error');
         }
@@ -881,7 +904,8 @@ body {
 
         if (response.ok) {
           showToast('Tunnel stopped', 'success');
-          fetchTunnels();
+          // Wait 1 second for process to stop, then update
+          setTimeout(fetchTunnels, 1000);
         } else {
           showToast('Failed to stop tunnel', 'error');
         }
@@ -914,6 +938,25 @@ body {
       fetchTunnels();
       showToast('Data refreshed', 'success');
     }
+
+    // Add refresh button to header for easy access
+    function addRefreshButton() {
+      const header = document.querySelector('.header');
+      if (!document.getElementById('refresh-btn')) {
+        const refreshBtn = document.createElement('button');
+        refreshBtn.id = 'refresh-btn';
+        refreshBtn.className = 'btn btn-secondary btn-small';
+        refreshBtn.innerHTML = '🔄 REFRESH';
+        refreshBtn.onclick = refreshAll;
+        refreshBtn.style.marginLeft = '1rem';
+        header.appendChild(refreshBtn);
+      }
+    }
+
+    // Initialize refresh button
+    document.addEventListener('DOMContentLoaded', function() {
+      addRefreshButton();
+    });
 
     function logout() {
       showToast('Logging out...', 'warning');
