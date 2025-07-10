@@ -124,7 +124,7 @@ func main() {
 	protected.HandleFunc("/tunnels/{name}/start", handlers.StartTunnelHandler).Methods("POST")
 	protected.HandleFunc("/tunnels/{name}/stop", handlers.StopTunnelHandler).Methods("POST")
 	protected.HandleFunc("/tunnels/{name}/status", handlers.GetTunnelStatusHandler).Methods("GET")
-	protected.HandleFunc("/tunnels/{name}/config", handlers.EditTunnelConfigHandler).Methods("PUT")
+	protected.HandleFunc("/tunnels/{name}/config", handlers.EditTunnelConfigHandler).Methods("GET", "PUT")
 
 	// System routes
 	protected.HandleFunc("/system/status", handlers.SystemStatusHandler).Methods("GET")

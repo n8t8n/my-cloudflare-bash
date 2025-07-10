@@ -206,9 +206,43 @@ func GetTunnelStatusHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func EditTunnelConfigHandler(w http.ResponseWriter, r *http.Request) {
-	// This would be implemented for editing tunnel configurations
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	if r.Method == "GET" {
+		// Get current YAML content
+		content, err := tunnels.GetTunnelConfig(name)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"config": content,
+			"name":   name,
+		})
+		return
+	}
+
+	// Update YAML content
+	var req struct {
+		Config string `json:"config"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	if err := tunnels.UpdateTunnelConfig(name, req.Config); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"message": "Config editing not implemented yet"})
+	json.NewEncoder(w).Encode(map[string]bool{"success": true})
 }
 
 func SystemStatusHandler(w http.ResponseWriter, r *http.Request) {

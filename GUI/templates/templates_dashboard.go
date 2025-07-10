@@ -547,6 +547,26 @@ body {
     </div>
   </div>
 
+  <!-- YAML Editor Modal -->
+  <div id="yaml-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Tunnel Configuration</h2>
+        <span class="close" onclick="closeModal('yaml-modal')">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="yaml-content">YAML Configuration:</label>
+          <textarea id="yaml-content" rows="20" placeholder="Enter YAML configuration..."></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-secondary" onclick="closeModal('yaml-modal')">Cancel</button>
+          <button class="btn btn-success" onclick="saveYamlConfig()">Save Configuration</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="toast"></div>
 
   <script>
@@ -687,7 +707,8 @@ body {
             '<button class="btn btn-success btn-small" onclick="startTunnel(\'' + tunnel.name + '\')">START</button>' :
             '<button class="btn btn-warning btn-small" onclick="stopTunnel(\'' + tunnel.name + '\')">STOP</button>'
           ) +
-          ' <button class="btn btn-danger btn-small" onclick="deleteTunnel(\'' + tunnel.name + '\')">DELETE</button>' +
+          ' <button class="btn btn-secondary btn-small" onclick="editTunnelConfig(\'' + tunnel.name + '\')">EDIT YAML</button> ' +
+          '<button class="btn btn-danger btn-small" onclick="deleteTunnel(\'' + tunnel.name + '\')">DELETE</button>' +
           '</td>' +
           '</tr>'
         ).join('') +
@@ -1018,6 +1039,46 @@ body {
         showToast('Server error', 'error');
       }
     });
+
+    let currentYamlTunnel = null;
+
+    async function editTunnelConfig(name) {
+      try {
+        const response = await fetch('/tunnels/' + name + '/config');
+        const result = await response.json();
+        if (response.ok && result.config) {
+          document.getElementById('yaml-content').value = result.config;
+          currentYamlTunnel = name;
+          openModal('yaml-modal');
+        } else {
+          showToast(result.error || 'Failed to load config', 'error');
+        }
+      } catch (error) {
+        showToast('Server error', 'error');
+      }
+    }
+
+    async function saveYamlConfig() {
+      if (!currentYamlTunnel) return;
+      const config = document.getElementById('yaml-content').value;
+      try {
+        const response = await fetch('/tunnels/' + currentYamlTunnel + '/config', {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ config })
+        });
+        const result = await response.json();
+        if (response.ok && result.success) {
+          showToast('Config updated', 'success');
+          closeModal('yaml-modal');
+          fetchTunnels();
+        } else {
+          showToast(result.error || 'Failed to update config', 'error');
+        }
+      } catch (error) {
+        showToast('Server error', 'error');
+      }
+    }
 
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/v3/process"
+	"gopkg.in/yaml.v3"
 )
 
 type Tunnel struct {
@@ -395,4 +396,36 @@ func DeleteTunnel(name string) error {
 
 func GetTunnelStatus(name string) (*Tunnel, error) {
 	return getTunnelFromConfig(name)
+}
+
+func GetTunnelConfig(name string) (string, error) {
+	configPath := filepath.Join(configDir, name+"-config.yml")
+
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("tunnel config not found: %s", name)
+	}
+
+	content, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read config file: %v", err)
+	}
+
+	return string(content), nil
+}
+
+func UpdateTunnelConfig(name, config string) error {
+	configPath := filepath.Join(configDir, name+"-config.yml")
+
+	// Validate YAML syntax before writing
+	var testConfig map[string]interface{}
+	if err := yaml.Unmarshal([]byte(config), &testConfig); err != nil {
+		return fmt.Errorf("invalid YAML syntax: %v", err)
+	}
+
+	// Write the updated config
+	if err := ioutil.WriteFile(configPath, []byte(config), 0644); err != nil {
+		return fmt.Errorf("failed to write config file: %v", err)
+	}
+
+	return nil
 }
