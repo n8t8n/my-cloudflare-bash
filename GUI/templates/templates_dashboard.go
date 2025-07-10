@@ -219,18 +219,60 @@ body {
 }
 
 .modal {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.7);
+}
+.modal-content {
   background: #1a1a2e;
+  margin: 5% auto;
+  padding: 2rem;
   border: 2px solid #ff6b35;
-  padding: 1.5rem;
-  min-width: 400px;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow-y: auto;
+  width: 90%;
+  max-width: 600px;
+  color: #ff6b35;
+  border-radius: 8px;
+  position: relative;
+}
+.modal-header h2 {
+  margin: 0 0 1rem 0;
+  color: #ff6b35;
+  font-size: 2rem;
+  font-family: 'Fira Mono', monospace;
+}
+.modal-header .close {
+  position: absolute;
+  right: 1.5rem;
+  top: 1.5rem;
+  font-size: 2rem;
+  color: #ff6b35;
+  cursor: pointer;
+}
+.modal-body label {
+  color: #ff6b35;
+  font-family: 'Fira Mono', monospace;
+}
+.modal-body textarea {
+  width: 100%;
+  font-family: 'Fira Mono', monospace;
+  font-size: 1rem;
+  background: #0f0f23;
+  color: #fff;
+  border: 1px solid #ff6b35;
   border-radius: 4px;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
 }
 
 .modal-header {
