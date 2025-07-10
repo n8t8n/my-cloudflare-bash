@@ -114,13 +114,16 @@ EOF
     SCRIPT_DIR="$(dirname "$0")"
     "$SCRIPT_DIR/cfdns.sh" --auto-tunnel
     echo -e "${COLOR_GREEN}[+] DNS record created automatically.${COLOR_RESET}"
-  fi
-
-  echo -n "Do you want to start the tunnel now? (y/n): "
-  read start
-  if [[ "$start" == "y" ]]; then
+    # Iniciar el túnel automáticamente después de crear el registro DNS
     cloudflared tunnel --config "$CONFIG_PATH" run &
-    echo -e "${COLOR_GREEN}[+] Tunnel started in background.${COLOR_RESET}"
+    echo -e "${COLOR_GREEN}[+] Tunnel started in background after DNS creation.${COLOR_RESET}"
+  else
+    echo -n "Do you want to start the tunnel now? (y/n): "
+    read start
+    if [[ "$start" == "y" ]]; then
+      cloudflared tunnel --config "$CONFIG_PATH" run &
+      echo -e "${COLOR_GREEN}[+] Tunnel started in background.${COLOR_RESET}"
+    fi
   fi
 
   sleep 1
@@ -202,6 +205,27 @@ edit_tunel() {
   fi
 }
 
+exportar_tunel() {
+  NAME="$1"
+  [[ -z "$NAME" ]] && read -p "Tunnel name to export: " NAME
+
+  CONFIG_PATH="$CONFIG_DIR/$NAME-config.yml"
+  CRED_FILE=$(grep 'credentials-file:' "$CONFIG_PATH" | awk '{print $2}' | tr -d '"')
+
+  if [[ ! -f "$CONFIG_PATH" || ! -f "$CRED_FILE" ]]; then
+    echo -e "${COLOR_RED}[!] Missing config or credentials for $NAME${COLOR_RESET}"
+    return
+  fi
+
+  EXPORT_DIR="$HOME/cloudflared-export/$NAME"
+  mkdir -p "$EXPORT_DIR"
+  cp "$CONFIG_PATH" "$EXPORT_DIR/"
+  cp "$CRED_FILE" "$EXPORT_DIR/"
+
+  echo -e "${COLOR_GREEN}[+] Tunnel exported to $EXPORT_DIR${COLOR_RESET}"
+  echo -e "${COLOR_YELLOW}[!] Copia esa carpeta al nuevo dispositivo y edita el path del credentials-file si es necesario.${COLOR_RESET}"
+}
+
 status_tuneles() {
   while true; do
     clear
@@ -251,7 +275,7 @@ status_tuneles() {
     fi
 
     print_line
-    echo -e "${COLOR_BLUE}Commands:${COLOR_RESET} start <name> | stop <name> | delete <name> | edit <name>"
+    echo -e "${COLOR_BLUE}Commands:${COLOR_RESET} start <name> | stop <name> | delete <name> | edit <name> | export <name>"
     echo -e "          start-all | stop-all | delete-all | refresh | back"
     print_line
     echo -n ">> "
@@ -262,6 +286,7 @@ status_tuneles() {
       stop) stop_tunel "$param" ;;
       delete) eliminar_tunel "$param" ;;
       edit) edit_tunel "$param" ;;
+      export) exportar_tunel "$param" ;;
       start-all)
         for conf in "${TUNNELS[@]}"; do
           NAME=$(basename "$conf" | sed 's/-config.yml//')
@@ -304,5 +329,90 @@ menu() {
     esac
   done
 }
+
+# Parse CLI arguments for non-interactive mode
+if [[ $# -gt 0 ]]; then
+  ACTION="$1"
+  shift
+  case "$ACTION" in
+    create)
+      # Usage: create --sub <subdomain> --port <port>
+      while [[ $# -gt 0 ]]; do
+        case $1 in
+          --sub)
+            SUB="$2"; shift 2;;
+          --port)
+            PORT="$2"; shift 2;;
+          *) shift;;
+        esac
+      done
+      if [[ -z "$SUB" || -z "$PORT" ]]; then
+        echo "Usage: $0 create --sub <subdomain> --port <port>"
+        exit 1
+      fi
+      # Call crear_tunel non-interactively
+      crear_tunel_noninteractive() {
+        local SUB="$1"
+        local PORT="$2"
+        # Simulate the logic of crear_tunel but without prompts
+        TUNNEL_OUTPUT=$(cloudflared tunnel create "$SUB-tunnel" 2>&1)
+        TUNNEL_ID=$(echo "$TUNNEL_OUTPUT" | grep -oE '[0-9a-f\-]{36}' | head -n 1)
+        if [[ -z "$TUNNEL_ID" ]]; then
+          echo "[!] Could not create tunnel. Review: ${TUNNEL_OUTPUT}"
+          exit 1
+        fi
+        CONFIG_PATH="$CONFIG_DIR/$SUB-config.yml"
+        CRED_PATH="$CONFIG_DIR/$TUNNEL_ID.json"
+        cat > "$CONFIG_PATH" <<EOF
+ tunnel: "$TUNNEL_ID"
+ credentials-file: "$CRED_PATH"
+ ingress:
+   - hostname: "$SUB.$CF_DOMAIN"
+     icmp: false
+     service: "http://0.0.0.0:$PORT"
+   - service: http_status:404
+EOF
+        echo "[+] Tunnel created: $SUB.$CF_DOMAIN (ID: $TUNNEL_ID)"
+        echo "[!] Point DNS to: CNAME → $TUNNEL_ID.cfargotunnel.com"
+        # Create DNS record automatically
+        export CF_DNS_SUB="$SUB"
+        export CF_DNS_TARGET="$TUNNEL_ID.cfargotunnel.com"
+        "$SCRIPT_DIR/cfdns.sh" --auto-tunnel
+        echo "[+] DNS record created automatically."
+        # Start tunnel automatically
+        cloudflared tunnel --config "$CONFIG_PATH" run &
+        echo "[+] Tunnel started in background."
+      }
+      SCRIPT_DIR="$(dirname "$0")"
+      crear_tunel_noninteractive "$SUB" "$PORT"
+      exit 0
+      ;;
+    start)
+      # Usage: start <subdomain>
+      NAME="$1"
+      if [[ -z "$NAME" ]]; then
+        echo "Usage: $0 start <subdomain>"
+        exit 1
+      fi
+      start_tunel "$NAME"
+      exit 0
+      ;;
+    stop)
+      # Usage: stop <subdomain>
+      NAME="$1"
+      if [[ -z "$NAME" ]]; then
+        echo "Usage: $0 stop <subdomain>"
+        exit 1
+      fi
+      stop_tunel "$NAME"
+      exit 0
+      ;;
+    *)
+      echo "Unknown command: $ACTION"
+      echo "Available commands: create, start, stop"
+      exit 1
+      ;;
+  esac
+fi
 
 menu

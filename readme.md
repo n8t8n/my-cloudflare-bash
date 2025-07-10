@@ -176,3 +176,28 @@ Use Termius SFTP for easy file transfers:
 
 ## 💡 About the Author
 👨‍💼 Hi, I'm Jonathan Void! While I'm not a professional developer by trade (I work in Customer Success), I enjoy building tools to simplify complex processes. This project was born out of my own need to make Cloudflare Tunnel management more accessible for non-technical users like myself, especially when working from my Moto E5 Play device. If you find this tool helpful, feel free to use and share it with others!
+
+## 🚀 CLI Usage (Non-Interactive)
+
+You can now use `cfmanager.sh` directly from the command line or scripts without the interactive menu. This is useful for automation or integration with other tools.
+
+### Create a tunnel (with DNS record, auto-start)
+```bash
+./cfmanager.sh create --sub mysub --port 3000
+```
+- Creates the tunnel
+- Generates config and credentials
+- **Automatically creates the DNS CNAME record**
+- Starts the tunnel in the background
+
+### Start a tunnel
+```bash
+./cfmanager.sh start mysub
+```
+
+### Stop a tunnel
+```bash
+./cfmanager.sh stop mysub
+```
+
+If you run `cfmanager.sh` with no arguments, the interactive menu will be shown as before.
