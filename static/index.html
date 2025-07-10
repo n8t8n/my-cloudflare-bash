@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloudflare Manager Dashboard</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">
+        ☁️ CF-MANAGER
+        <span style="font-size: 0.8rem; color: #888;">admin@cloudflare:~/dashboard</span>
+      </div>
+      <div class="actions">
+        <div class="dropdown">
+          <button class="dropdown-btn" onclick="toggleDropdown()">
+            ACTIONS <span class="dropdown-arrow">▼</span>
+          </button>
+          <div class="dropdown-content" id="dropdown-menu">
+            <button class="dropdown-item" onclick="showCreateDNSModal()">Create DNS Record</button>
+            <button class="dropdown-item" onclick="showCreateTunnelModal()">Create Tunnel</button>
+            <button class="dropdown-item" onclick="refreshAll()">Refresh All</button>
+            <button class="dropdown-item" onclick="logout()">Logout</button>
+            <button class="dropdown-item" onclick="showChangePasswordModal()">Change Password</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-label">DNS Records</div>
+        <div class="stat-value" id="dns-count">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Active Tunnels</div>
+        <div class="stat-value" id="tunnel-count">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Running Tunnels</div>
+        <div class="stat-value" id="running-count">0</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('dns')">DNS RECORDS</button>
+      <button class="tab" onclick="switchTab('tunnels')">TUNNELS</button>
+    </div>
+
+    <div class="tab-content active" id="dns-content">
+      <div class="section">
+        <div class="section-header">
+          DNS Records
+          <button class="btn btn-primary btn-small" onclick="showCreateDNSModal()">+ ADD</button>
+        </div>
+        <div id="dns-table-container">
+          <div class="empty-state">Loading DNS records...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tunnels-content">
+      <div class="section">
+        <div class="section-header">
+          Tunnels
+          <button class="btn btn-primary btn-small" onclick="showCreateTunnelModal()">+ ADD</button>
+        </div>
+        <div id="tunnels-table-container">
+          <div class="empty-state">Loading tunnels...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DNS Modal -->
+  <div class="modal-overlay" id="dns-modal">
+    <div class="modal">
+      <div class="modal-header">Create DNS Record</div>
+      <form id="dns-form">
+        <div class="form-group">
+          <label class="form-label">Subdomain</label>
+          <input type="text" class="form-input" id="dns-subdomain" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select class="form-select" id="dns-type" required>
+            <option value="A">A</option>
+            <option value="AAAA">AAAA</option>
+            <option value="CNAME">CNAME</option>
+            <option value="TXT">TXT</option>
+            <option value="MX">MX</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target</label>
+          <input type="text" class="form-input" id="dns-target" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">
+            <input type="checkbox" class="form-checkbox" id="dns-proxied" checked>
+            Enable Cloudflare Proxy
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('dns-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit DNS Modal -->
+  <div class="modal-overlay" id="edit-dns-modal">
+    <div class="modal">
+      <div class="modal-header">Edit DNS Record</div>
+      <form id="edit-dns-form">
+        <input type="hidden" id="edit-dns-id">
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select class="form-select" id="edit-dns-type" required>
+            <option value="A">A</option>
+            <option value="AAAA">AAAA</option>
+            <option value="CNAME">CNAME</option>
+            <option value="TXT">TXT</option>
+            <option value="MX">MX</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target</label>
+          <input type="text" class="form-input" id="edit-dns-target" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">
+            <input type="checkbox" class="form-checkbox" id="edit-dns-proxied">
+            Enable Cloudflare Proxy
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('edit-dns-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tunnel Modal -->
+  <div class="modal-overlay" id="tunnel-modal">
+    <div class="modal">
+      <div class="modal-header">Create Tunnel</div>
+      <form id="tunnel-form">
+        <div class="form-group">
+          <label class="form-label">Subdomain (optional, will generate random if empty)</label>
+          <input type="text" class="form-input" id="tunnel-subdomain" placeholder="e.g., home">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Local Port</label>
+          <input type="number" class="form-input" id="tunnel-port" required min="1" max="65535" placeholder="e.g., 3000">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('tunnel-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div class="modal-overlay" id="change-password-modal">
+    <div class="modal">
+      <div class="modal-header">Change Password</div>
+      <form id="change-password-form">
+        <div class="form-group">
+          <label class="form-label">Current Password</label>
+          <input type="password" class="form-input" id="old-password" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <input type="password" class="form-input" id="new-password" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('change-password-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Change</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <script src="/js/dashboard.js"></script>
+</body>
+</html> 

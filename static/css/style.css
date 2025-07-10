@@ -1,0 +1,390 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #1a1a2e;
+  color: #eee;
+  font-family: 'Courier New', monospace;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.container {
+  padding: 1rem;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #16213e;
+  padding-bottom: 1rem;
+}
+
+.title {
+  color: #ff6b35;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.actions {
+  position: relative;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-btn {
+  background: none;
+  border: 1px solid #0f3460;
+  color: #0f3460;
+  padding: 0.3rem 0.8rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dropdown-btn:hover {
+  background: #0f3460;
+  color: #eee;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background: #1a1a2e;
+  border: 1px solid #16213e;
+  min-width: 160px;
+  z-index: 1000;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+}
+
+.dropdown-content.show {
+  display: block;
+}
+
+.dropdown-item {
+  color: #eee;
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  display: block;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-family: monospace;
+}
+
+.dropdown-item:hover {
+  background: #16213e;
+  color: #ff6b35;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #16213e;
+  margin-bottom: 1rem;
+}
+
+.tab {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.tab.active {
+  color: #ff6b35;
+  border-bottom: 2px solid #ff6b35;
+}
+
+.tab-content {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.section {
+  border: 1px solid #16213e;
+  background: #0f0f23;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+}
+
+.section-header {
+  color: #ff6b35;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn {
+  background: none;
+  border: 1px solid;
+  color: inherit;
+  padding: 0.3rem 0.8rem;
+  font-family: monospace;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 2px;
+}
+
+.btn-primary { border-color: #0f3460; color: #0f3460; }
+.btn-secondary { border-color: #ff6b35; color: #ff6b35; }
+.btn-danger { border-color: #ff4757; color: #ff4757; }
+.btn-success { border-color: #2ed573; color: #2ed573; }
+
+.btn:hover {
+  background: currentColor;
+  color: #1a1a2e;
+}
+
+.btn-small {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.6rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #16213e;
+  font-size: 0.7rem;
+}
+
+.table th {
+  color: #ff6b35;
+  font-weight: bold;
+}
+
+.status-running { color: #2ed573; }
+.status-stopped { color: #ff4757; }
+.status-proxied { color: #ff6b35; }
+.status-dns { color: #0f3460; }
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: none;
+}
+
+.modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #1a1a2e;
+  border: 2px solid #ff6b35;
+  padding: 1.5rem;
+  min-width: 400px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 4px;
+}
+
+.modal-header {
+  color: #ff6b35;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  color: #eee;
+  margin-bottom: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  background: transparent;
+  border: 1px solid #16213e;
+  color: #eee;
+  padding: 0.5rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: #ff6b35;
+}
+
+.form-checkbox {
+  margin-right: 0.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.toast {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: #2ed573;
+  color: #1a1a2e;
+  padding: 0.8rem 1.2rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  z-index: 2000;
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast.error {
+  background: #ff4757;
+  color: white;
+}
+
+.toast.warning {
+  background: #ffa502;
+  color: #1a1a2e;
+}
+
+.empty-state {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  padding: 2rem;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-box {
+  border: 1px solid #16213e;
+  padding: 1rem;
+  background: #0f0f23;
+  flex: 1;
+  min-width: 150px;
+  border-radius: 4px;
+}
+
+.stat-label {
+  color: #888;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  color: #ff6b35;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 0.2rem 0;
+}
+
+.dropdown-arrow {
+  font-size: 0.6rem;
+  transition: transform 0.2s;
+}
+
+.dropdown.active .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* Login page styles */
+.login-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo {
+  color: #ff6b35;
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.prompt {
+  color: #ff6b35;
+  font-size: 1.2rem;
+}
+
+.input {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #0f3460;
+  color: #eee;
+  font-size: 1.2rem;
+  padding: 0.5rem 0;
+  outline: none;
+  width: 300px;
+  text-align: center;
+  font-family: monospace;
+}
+
+.input:focus {
+  border-bottom-color: #ff6b35;
+}
+
+.message {
+  color: #ff4757;
+  min-height: 1.2rem;
+} 

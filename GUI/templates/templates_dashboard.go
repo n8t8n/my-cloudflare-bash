@@ -826,7 +826,7 @@ body {
         const result = await response.json();
         
         if (response.ok) {
-          showToast('Tunnel created successfully', 'success');
+          showToast(result.message || 'Tunnel created successfully', 'success');
           closeModal('tunnel-modal');
           fetchTunnels();
         } else {
