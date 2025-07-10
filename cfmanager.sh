@@ -217,13 +217,14 @@ exportar_tunel() {
     return
   fi
 
-  EXPORT_DIR="$HOME/cloudflared-export/$NAME"
+  # Save export in a folder relative to the current directory
+  EXPORT_DIR="./cloudflared-export/$NAME"
   mkdir -p "$EXPORT_DIR"
   cp "$CONFIG_PATH" "$EXPORT_DIR/"
   cp "$CRED_FILE" "$EXPORT_DIR/"
 
   echo -e "${COLOR_GREEN}[+] Tunnel exported to $EXPORT_DIR${COLOR_RESET}"
-  echo -e "${COLOR_YELLOW}[!] Copia esa carpeta al nuevo dispositivo y edita el path del credentials-file si es necesario.${COLOR_RESET}"
+  echo -e "${COLOR_YELLOW}[!] Copy this folder to the new device and edit the credentials-file path if needed.${COLOR_RESET}"
 }
 
 status_tuneles() {
